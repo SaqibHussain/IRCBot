@@ -129,6 +129,13 @@ namespace IRCBot.Models
 
     public class TvMazeEpisode
     {
+        public bool HasAirDate
+        {
+            get
+            {
+                return !(airdate == "(x)");
+            }
+        }
         public string id { get; set; }
         public string url { get; set; }
         public string name { get; set; }

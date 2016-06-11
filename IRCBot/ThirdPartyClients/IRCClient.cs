@@ -338,7 +338,7 @@ namespace IRCBot.ThirdPartyClients
             // an action rather than just a long message, so check for this
             if (splitInput.Length > 4)
             {
-                action = Common.StripColours(splitInput[3].Trim());
+                action = Common.StripIRCColours(splitInput[3].Trim());
 
                 if (action == ":ACTION")
                 {

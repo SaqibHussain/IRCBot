@@ -58,10 +58,10 @@ namespace IRCBot
         private static void InitialiseClients()
         {
             _ircClient = new IRCClient(
-                ClientConnectionSettings.IRC_SERVER, 
-                ClientConnectionSettings.IRC_PORT, 
-                ClientConnectionSettings.IRC_USER, 
-                ClientConnectionSettings.IRC_NICK, 
+                ClientConnectionSettings.IRC_SERVER,
+                ClientConnectionSettings.IRC_PORT,
+                ClientConnectionSettings.IRC_USER,
+                ClientConnectionSettings.IRC_NICK,
                 ClientConnectionSettings.IRC_PASSWORD);
 
             // Try and connect to the irc server with a 20 second timeout
@@ -74,7 +74,7 @@ namespace IRCBot
 
             _imgur = new ImgurClient(
                 ClientConnectionSettings.IMGUR_CLIENT_ID,
-                ClientConnectionSettings.IMGUR_CLIENT_SECRET, 
+                ClientConnectionSettings.IMGUR_CLIENT_SECRET,
                 ClientConnectionSettings.IMGUR_REFRESH_TOKEN);
 
             _telegramClient = new TelegramClient(
@@ -173,17 +173,19 @@ namespace IRCBot
                         {
                             string message = telegramResponse.Message;
 
+                            // Don't want to send slash triggers to irc
                             if (message.StartsWith("/"))
                             {
                                 HandleTelegramSlashTrigger(message);
                             }
-                            else if (message.StartsWith("!"))
-                            {
-                                HandleTrigger(message);
-                            }
                             else
                             {
                                 _ircClient.Write(ClientConnectionSettings.IRC_CHANNEL, usernameWithColours + message);
+
+                                if (message.StartsWith("!"))
+                                {
+                                    HandleTrigger(message);
+                                }
                             }
                         }
                     }
@@ -352,11 +354,16 @@ namespace IRCBot
                 TvMazeEpisode lastEp = show.PrevEpisode;
                 TvMazeEpisode nextEp = show.NextEpisode;
                 string line1 = $" 14{show.name} 15-- {Common.GenerateCommaList(show.schedule?.days)} {show.schedule?.time}  8(14{show.status}8) (14{show.network?.name}8)";
+                Write(line1);
                 string line2 = $"{CTRLK}14{CTRLB}Prev Episode {CTRLB}{CTRLK}15-- {lastEp?.airdate} {CTRLK}08({CTRLK}14{lastEp?.season}{CTRLK}08x{CTRLK}14{lastEp?.number}{CTRLK}08){CTRLK}14 - {lastEp?.name}";
+                Write(line2);
                 DateTime airing = Convert.ToDateTime(nextEp?.airstamp);
                 TimeSpan span = airing.Subtract(DateTime.UtcNow);
-                string line3 = $"{CTRLK}14{CTRLB}Next Episode {CTRLB}{CTRLK}15-- {nextEp?.airdate} {CTRLK}08({CTRLK}14{nextEp?.season}{CTRLK}08x{CTRLK}14{nextEp?.number}{CTRLK}08){CTRLK}14 - {nextEp?.name} - Airing in: {CTRLK}08{span.Days}{CTRLK}14 days {CTRLK}08{span.Hours}{CTRLK}14 hours {CTRLK}08{span.Minutes}{CTRLK}14 minutes {CTRLK}08{span.Seconds}{CTRLK}14 seconds";
-                Write(line1); Write(line2); Write(line3);
+                if (nextEp != null && nextEp.HasAirDate)
+                {
+                    string line3 = $"{CTRLK}14{CTRLB}Next Episode {CTRLB}{CTRLK}15-- {nextEp.airdate} {CTRLK}08({CTRLK}14{nextEp.season}{CTRLK}08x{CTRLK}14{nextEp.number}{CTRLK}08){CTRLK}14 - {nextEp.name} - Airing in: {CTRLK}08{span.Days}{CTRLK}14 days {CTRLK}08{span.Hours}{CTRLK}14 hours {CTRLK}08{span.Minutes}{CTRLK}14 minutes {CTRLK}08{span.Seconds}{CTRLK}14 seconds";
+                    Write(line3);
+                }
             }
             else
             {
@@ -367,7 +374,7 @@ namespace IRCBot
         private static void Write(string message)
         {
             _ircClient.Write(ClientConnectionSettings.IRC_CHANNEL, message);
-            _telegramClient.SendMessage(Common.StripColours(message));
+            _telegramClient.SendMessage(Common.StripIRCColours(message));
         }
     }
 }
